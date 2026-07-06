@@ -1,73 +1,63 @@
+<div align="center">
+
 # System Designs with Deva
 
-**Buildable system-design breakdowns of the systems that actually run a country.**
+**Buildable, interview-shaped breakdowns of the systems that run a country.**
 
-This repo is the companion to the **"System Design — What If"** series on YouTube
-(channel: **beyondcodekarma** / *System Designs with Deva*). Each system gets one folder
-and a set of numbered docs, written in the order a real system-design interview walks:
-how it works → requirements & API → high-level design → services → data → failures →
-build-it-yourself.
+Companion to the **[System Design — What If](https://youtube.com/@beyondcodekarma)** series — reverse-engineer a real system, then rebuild a working toy of it and defend every choice.
 
-The goal is not to admire these systems. It's to **understand them well enough to build a
-working toy of each one** — and to defend every choice in an interview.
+`UPI` · `IRCTC` *(soon)* · `Hotstar` *(soon)* — verified facts, labelled sources, real diagrams.
 
-## Who this is for
+![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-f54e00) ![Docs](https://img.shields.io/badge/docs-HTML%20site-1b1915) ![Systems](https://img.shields.io/badge/systems-1%20ready%20·%202%20coming-9fbbe0)
 
-- **Engineers prepping for system-design interviews.** The docs are shaped like the rounds
-  themselves: scope and non-functional requirements first, then the board, then the
-  follow-up grilling (isolation, locking, caching, replication, DR, observability, cost).
-- **Anyone who wants to actually build these.** Every system ends with a `07-build-it-yourself.md`
-  that gives you a stack, a minimal build order you can run on one laptop, and an
-  order-of-magnitude cost envelope.
+</div>
 
-## How it's organized
+---
 
-One folder per system. Inside each folder, seven numbered docs in interview order:
+The goal here is not to *admire* these systems. It's to understand them well enough to **build a working toy of each one** — and to walk into a system-design interview able to defend every box on the board.
 
-| Doc | What it covers |
-|---|---|
-| `01-how-it-really-works.md` | The machine as it exists today — the ground truth. |
-| `02-requirements-and-api.md` | Functional + non-functional requirements, back-of-envelope, the API contract. |
-| `03-high-level-design.md` | The box diagram, and a trace of one request through it. |
-| `04-services-and-interactions.md` | Domain decomposition: the real service catalog + who-calls-whom matrix. |
-| `05-data-layer.md` | Database-per-store matrix, ACID/isolation, locking, caching. |
-| `06-failures-and-operations.md` | Failure matrix, replication, DR, edge, observability, CDC. |
-| `07-build-it-yourself.md` | Pick-your-stack table, minimal build order, cost envelope. |
+Each system gets one folder and seven numbered docs, written in the order a real interview walks: how it works → requirements & API → high-level design → services → data → failures → build-it-yourself.
+
+> [!NOTE]
+> Every non-obvious claim carries a label, and that honesty is the point:
+> `[V]` **verified** (a spec/circular/on-record statement, fetched and read) · `[R]` **reported** (credible secondary, hedged) · `[I]` **inferred** (our arithmetic/opinion, an estimate). Where the honest answer is "not published," it says **UNKNOWN** — no invented peak-TPS records, no made-up internal latencies, no stack folklore.
 
 ## Systems
 
-| System | Status | Videos |
-|---|---|---|
-| **[UPI](./upi/)** — India's instant payment rails | ✅ Ready | Video 1 (how it works + design) · Video 2 (the follow-up round) — *(links in the video descriptions)* |
-| **[IRCTC](./irctc/)** — the Tatkal booking storm | 🚧 Coming with its video | — |
-| **[Hotstar](./hotstar/)** — 25M+ concurrent live viewers | 🚧 Coming with its video | — |
+| System | What it is | Status |
+| :-- | :-- | :-- |
+| **[UPI](./upi/)** | India's instant payment rails — ~22B txns/month across 700+ banks | ✅ **Ready** — [7 docs](./upi/) + [build guide](./upi/07-build-it-yourself.md) |
+| **IRCTC** | The Tatkal booking storm — tens of thousands of tickets/min on fixed inventory | 🚧 Coming with its video |
+| **Hotstar** | Tens of millions of concurrent live viewers on one cricket ball | 🚧 Coming with its video |
 
-## How to use this for interview prep
+## Read it two ways
 
-1. **Read `01` and close it. Then try to rebuild `03` yourself** on a blank page before
-   reading it. The gap between your board and ours is your study list.
-2. **Treat `04`–`06` as the follow-up round.** For each question ("two payments leave the
-   same account at once — why don't I lose money?"), answer out loud before reading on.
-   Say the rejected alternative and the number that chose between them — that's what senior
-   answers sound like.
-3. **Build the toy in `07`.** Nothing teaches a design like watching your own ledger
-   refuse to go below zero.
+- **On GitHub** — open any folder; the Markdown renders with diagrams inline. Start at **[`upi/`](./upi/)**.
+- **As an HTML site** — [`docs/index.html`](./docs/index.html) is a self-contained, offline-ready page rendering the whole UPI breakdown on the "digital blackboard" from the videos, diagrams and all. Open it locally, or serve `docs/` with GitHub Pages.
 
-## Fact labels
+## What's in a system folder
 
-Every non-obvious claim carries a label, and that honesty is the point:
+Using UPI as the worked example:
 
-- **`[V]` verified** — traced to a primary or near-primary source (a spec, a circular, an
-  on-record statement) that was fetched and read.
-- **`[R]` reported** — a credible secondary source; quoted with attribution or "roughly".
-- **`[I]` inferred / estimate** — our arithmetic or engineering judgment. Spoken as an
-  estimate, never as fact.
+| Doc | Interview stage |
+| :-- | :-- |
+| [`01-how-it-really-works`](./upi/01-how-it-really-works.md) | The machine as it exists today — the ground truth. |
+| [`02-requirements-and-api`](./upi/02-requirements-and-api.md) | Functional + non-functional requirements, back-of-envelope, the API contract. |
+| [`03-high-level-design`](./upi/03-high-level-design.md) | The box diagram, and a trace of one request through it. |
+| [`04-services-and-interactions`](./upi/04-services-and-interactions.md) | Domain decomposition: the real service catalog + the who-calls-whom matrix. |
+| [`05-data-layer`](./upi/05-data-layer.md) | Database-per-store matrix, ACID/isolation, locking, caching. |
+| [`06-failures-and-operations`](./upi/06-failures-and-operations.md) | Failure matrix, replication, disaster recovery, edge, observability, CDC. |
+| [`07-build-it-yourself`](./upi/07-build-it-yourself.md) | Pick-your-stack table, minimal build order, cost envelope. |
 
-Where the honest answer is "not published," we say **UNKNOWN** rather than invent a number.
-No peak-TPS records, no fabricated internal latencies, no made-up stack folklore.
+## Use it for interview prep
 
-## Credit & license
+1. **Read `01`, then close it.** Try to redraw `03` (the board) on a blank page before reading it — the gap between your board and ours is your study list.
+2. **Treat `04`–`06` as the follow-up round.** For each question ("two payments leave the same account at once — why don't I lose money?"), answer out loud *before* reading on. Say the rejected alternative and the number that chose between them — that's what senior sounds like.
+3. **Build the toy in `07`.**
 
-Made by **beyondcodekarma**. Licensed under
-**[Creative Commons Attribution 4.0 International (CC BY 4.0)](./LICENSE)** — use it, remix
-it, teach from it; just credit *System Designs with Deva / beyondcodekarma*.
+> [!TIP]
+> The fastest way to make a design stick is to build it. `07-build-it-yourself` gets a Postgres ledger, a Redis mapper, and a Kafka journal running on one laptop — and nothing teaches double-entry like watching your own ledger's `CHECK` constraint refuse to go below zero.
+
+## Credit
+
+Made by **beyondcodekarma** · *System Designs with Deva*. Licensed under **[CC BY 4.0](./LICENSE)** — use it, remix it, teach from it; just keep the credit.

@@ -31,7 +31,7 @@ resolves, scores, or records.
 flowchart LR
     U[User] --> APP[PSP app TPAP]
     APP --> PSP[PSP service + sponsor bank]
-    PSP --> SW{NPCI central switch\nstateless router}
+    PSP --> SW{NPCI central switch<br/>stateless router}
 
     SW -->|resolve mobile payee| MAP[(Mapper KV)]
     SW -->|risk score ~75ms| FR[Fraud check]
@@ -44,6 +44,18 @@ flowchart LR
     PPSP --> PAPP[Payee app]
 
     J --> RECON[Recon + settlement + analytics]
+
+    class U,APP,PAPP client
+    class PSP,SW,PPSP svc
+    class MAP cache
+    class FR,J queue
+    class BA,BB bank
+    class RECON bank
+    classDef client fill:#2b211b,stroke:#dfa88f,stroke-width:2px,color:#f0d9cc;
+    classDef svc fill:#2b2513,stroke:#d8b45a,stroke-width:2px,color:#f0e4c4;
+    classDef cache fill:#1e2b20,stroke:#9fc9a2,stroke-width:2px,color:#d5ecd6;
+    classDef bank fill:#1e242e,stroke:#9fbbe0,stroke-width:2px,color:#d5e2f2;
+    classDef queue fill:#251f2e,stroke:#c8b6f0,stroke-width:2px,color:#e2d9f2;
 ```
 
 Read it as three horizontal bands:

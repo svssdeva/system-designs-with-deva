@@ -18,12 +18,22 @@ banks (batched cycles at the RBI). **The green tick is the authorization, not th
 flowchart LR
   U[You] --> A[TPAP app]
   A --> P[PSP service]
-  P --> N{NPCI switch\nstateless router}
+  P --> N{NPCI switch<br/>stateless router}
   N -->|resolve @handle| M[(Mapper KV)]
   N -->|debit leg| BA[Payer bank CBS]
   N -->|credit leg| BB[Payee bank CBS]
   N -.->|every event| K[[Kafka journal]]
   N --> PA[Payee app]
+  class U,A,PA client
+  class P,N svc
+  class M cache
+  class BA,BB bank
+  class K queue
+  classDef client fill:#2b211b,stroke:#dfa88f,stroke-width:2px,color:#f0d9cc;
+  classDef svc fill:#2b2513,stroke:#d8b45a,stroke-width:2px,color:#f0e4c4;
+  classDef cache fill:#1e2b20,stroke:#9fc9a2,stroke-width:2px,color:#d5ecd6;
+  classDef bank fill:#1e242e,stroke:#9fbbe0,stroke-width:2px,color:#d5e2f2;
+  classDef queue fill:#251f2e,stroke:#c8b6f0,stroke-width:2px,color:#e2d9f2;
 ```
 
 ## Myth-busts (what most explainers get wrong)

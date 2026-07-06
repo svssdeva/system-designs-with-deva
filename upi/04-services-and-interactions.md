@@ -72,6 +72,17 @@ flowchart LR
   J -.->|event| RECON[Reconciliation]
   J -.->|event| NOTIF[Notifications]
   J -.->|event| ANALYTICS[Analytics / search]
+
+  class APP client
+  class ORCH,VAL,FRAUD,RECON,NOTIF,ANALYTICS svc
+  class MAP cache
+  class J queue
+  class BA,BB bank
+  classDef client fill:#2b211b,stroke:#dfa88f,stroke-width:2px,color:#f0d9cc;
+  classDef svc fill:#2b2513,stroke:#d8b45a,stroke-width:2px,color:#f0e4c4;
+  classDef cache fill:#1e2b20,stroke:#9fc9a2,stroke-width:2px,color:#d5ecd6;
+  classDef bank fill:#1e242e,stroke:#9fbbe0,stroke-width:2px,color:#d5e2f2;
+  classDef queue fill:#251f2e,stroke:#c8b6f0,stroke-width:2px,color:#e2d9f2;
 ```
 
 - **Synchronous** (solid): app → orchestrator → validator, mapper, fraud, bank connectors. The
