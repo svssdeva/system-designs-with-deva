@@ -33,7 +33,7 @@ Each system gets one folder and seven numbered docs, written in the order a real
 ## Read it two ways
 
 - **On GitHub** — open any folder; the Markdown renders with diagrams inline. Start at **[`upi/`](./upi/)**.
-- **As an HTML site** — [`docs/index.html`](./docs/index.html) is a self-contained, offline-ready page rendering the whole UPI breakdown on the "digital blackboard" from the videos, diagrams and all. Open it locally, or serve `docs/` with GitHub Pages.
+- **As an HTML site** — [`upi/index.html`](./upi/index.html) is a self-contained, offline-ready page rendering the whole UPI breakdown on the "digital blackboard" from the videos, diagrams and all. Open it locally, or serve it with GitHub Pages (each system folder carries its own `index.html`).
 
 ## What's in a system folder
 
