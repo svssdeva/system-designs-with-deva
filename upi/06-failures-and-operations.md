@@ -92,6 +92,22 @@ debit**.
 
 ## Disaster recovery
 
+```mermaid
+flowchart LR
+    subgraph IN["India — RBI data-residency boundary (2018)"]
+        direction LR
+        CH["Chennai DC<br/>Tier-IV · active"]
+        HY["Hyderabad DC<br/>Tier-IV · active"]
+        CH <-->|"MirrorMaker-2<br/>active-active replication"| HY
+    end
+    OFF["Frankfurt / Virginia<br/>payment data may NOT<br/>be stored abroad"]
+    IN -.->|"cannot fail over offshore"| OFF
+    class CH,HY bank
+    class OFF off
+    classDef bank fill:#1e242e,stroke:#9fbbe0,stroke-width:2px,color:#d5e2f2;
+    classDef off fill:#2a1a1a,stroke:#e0607a,stroke-width:2px,color:#f2d0d0,stroke-dasharray:5 4;
+```
+
 - **Two Tier-IV data centres, active-active.** NPCI runs from **Chennai + Hyderabad**
   (Tier-IV), designed to keep serving if one is lost. `[V/R]`
 - **The residency constraint shapes the whole DR map.** RBI's 6 Apr 2018 data-storage

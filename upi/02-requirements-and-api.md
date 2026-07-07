@@ -127,6 +127,29 @@ of status checks); the fix mandated status checks **≥ 90 s** after auth. `[V]`
 > **Rule:** *Timeout ⇒ query, don't re-execute. A user "retry" is a brand-new Txn ID
 > and RRN — a new payment, not a resend.* `[V]`
 
+The three properties, drawn as one payment — the `Ack` is a receipt, the two legs share
+one Txn ID, and the *answer* comes back as a later callback:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as Payer PSP
+    participant S as NPCI switch
+    participant M as Mapper KV
+    participant BA as Payer bank
+    participant BB as Payee bank
+    P->>S: ReqPay · 35-char Txn ID
+    S-->>P: Ack — received, NOT the result
+    S->>M: resolve payee VPA
+    M-->>S: masked account
+    S->>BA: DEBIT leg (same Txn ID)
+    BA-->>S: debited ✓
+    S->>BB: CREDIT leg (same Txn ID)
+    BB-->>S: credited ✓
+    S-->>P: RespPay callback — the real answer
+    Note over P,BB: no callback? ReqChkTxn after ≥90 s. Never re-send a leg.
+```
+
 ### The protocol shape (stateless XML)
 
 Every money message is `ReqPay` / `RespPay`. The important sub-structures:

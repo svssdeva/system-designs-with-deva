@@ -53,6 +53,22 @@ Txn A: read balance = 100  →  100 >= 80 OK  →  write 100 - 80 = 20
 Txn B: read balance = 100  →  100 >= 80 OK  →  write 100 - 80 = 20
 ```
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Txn A · pays ₹80
+    participant DB as Account row · ₹100
+    participant B as Txn B · pays ₹80
+    A->>DB: read balance
+    DB-->>A: 100
+    B->>DB: read balance
+    DB-->>B: 100
+    Note over A,B: both read 100 — neither sees the other's debit
+    A->>DB: 100 ≥ 80 ✓ · write 20
+    B->>DB: 100 ≥ 80 ✓ · write 20
+    Note over DB: balance = 20, yet ₹160 left a ₹100 account — lost update
+```
+
 Both read the *pre-debit* balance of 100, both pass the check, both write 20. The
 account paid out **₹160 it did not have**. Read-committed lets each transaction see a
 consistent snapshot but does **not** stop this read-then-write race — a classic **lost
