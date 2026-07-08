@@ -1,0 +1,24 @@
+# Applies to all system folders (upi/ irctc/ hotstar/) and the root.
+# The docs (*.md), diagrams, and each folder's index.html ARE the repo — keep them.
+
+# secrets / env
+.env
+*.env
+
+# dependencies (only if mermaid-cli etc. is ever installed in-repo)
+node_modules/
+
+# HTML-site build scratch (mermaid-cli / puppeteer temp)
+*.mmd.tmp
+.mermaid-*
+.puppeteerrc*
+**/_tmp/
+**/*.tmp
+
+# editor / agent / OS cruft
+.claude/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
