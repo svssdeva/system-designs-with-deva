@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "UPI Switch — REST edge (design [D])",
+    "description": "Buildable [D] REST contract for the UPI design in system-designs-with-deva/upi. NOT the real (unpublished) NPCI API — the public edge you'd build, faithful to the on-screen protocol semantics (35-char idempotency key, async 202 Ack != answer, status-check-only-after-timeout, one money API). Set {{baseUrl}} to a mock server. See api-contracts.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://api.upiswitch.example/v1" },
+    { "key": "token", "value": "eyJhbGciOiJIUzI1NiJ9.PLACEHOLDER" },
+    { "key": "txnId", "value": "A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R" },
+    { "key": "vpa", "value": "merchant@okaxis" },
+    { "key": "mandateId", "value": "UMN-2026-8f31c0a4" }
+  ],
+  "item": [
+    {
+      "name": "UPI",
+      "item": [
+        {
+          "name": "POST /pay — initiate PAY or COLLECT (202 async)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Idempotency-Key", "value": "{{txnId}}", "description": "35-char Txn ID = idempotency key (OC-193)" },
+              { "key": "X-Device-Fingerprint", "value": "eyJtb2JpbGUiOiI5OTk5OTk5OTk5In0=" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intent\": \"PAY\",\n  \"amount\": { \"value\": \"499.00\", \"currency\": \"INR\" },\n  \"payer\":  { \"vpa\": \"arjun@okhdfcbank\" },\n  \"payee\":  { \"vpa\": \"merchant@okaxis\" },\n  \"note\": \"Order #48213\",\n  \"credentialBlock\": \"BASE64(RSA(NPCIpub, AES(K0, SHA256(amount|refId|payer|payee|appId|mobile|deviceId))))\",\n  \"rule\": { \"expireAfter\": \"PT30M\" }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/pay", "host": ["{{baseUrl}}"], "path": ["pay"] },
+            "description": "202 Accepted returns { txnId, rrn (12-digit), status: ACCEPTED, statusUrl }. The Ack is a receipt, NOT the result. For COLLECT set intent=COLLECT, omit credentialBlock, keep rule.expireAfter."
+          }
+        },
+        {
+          "name": "GET /transactions/{txnId} — status poll (only after timeout)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/transactions/{{txnId}}", "host": ["{{baseUrl}}"], "path": ["transactions", "{{txnId}}"] },
+            "description": "The ReqChkTxn equivalent. Poll >=90s after auth, NEVER a blind retry of a leg. Returns state (ACCEPTED|PENDING|SUCCESS|FAILURE|DEEMED) + per-leg outcome + 6-char approvalNum."
+          }
+        },
+        {
+          "name": "GET /vpa/{vpa} — resolve / validate a VPA (ReqValAdd)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/vpa/{{vpa}}", "host": ["{{baseUrl}}"], "path": ["vpa", "{{vpa}}"] },
+            "description": "Cacheable, ms-stale tolerant. Returns { valid, payeeName, type }. NEVER returns the account number."
+          }
+        },
+        {
+          "name": "POST /mandates — create an AutoPay mandate (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payer\": { \"vpa\": \"arjun@okhdfcbank\" },\n  \"payee\": { \"vpa\": \"netflix@okicici\" },\n  \"amount\": { \"value\": \"649.00\", \"currency\": \"INR\" },\n  \"frequency\": \"MONTHLY\",\n  \"validFrom\": \"2026-08-01\",\n  \"validUntil\": \"2027-07-31\",\n  \"amountRule\": \"MAX\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/mandates", "host": ["{{baseUrl}}"], "path": ["mandates"] },
+            "description": "A mandate stores CONSENT, not money. 201 Created returns { mandateId, status, nextDebitOn }."
+          }
+        },
+        {
+          "name": "POST /mandates/{mandateId}/execute — trigger AutoPay debit (202 async)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Idempotency-Key", "value": "AUTOPAY-2026-08-{{mandateId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"cycle\": \"2026-08\"\n}" },
+            "url": { "raw": "{{baseUrl}}/mandates/{{mandateId}}/execute", "host": ["{{baseUrl}}"], "path": ["mandates", "{{mandateId}}", "execute"] },
+            "description": "Idempotent per cycle, async like /pay. <=15K skips re-PIN. Returns 202 + statusUrl."
+          }
+        }
+      ]
+    }
+  ]
+}

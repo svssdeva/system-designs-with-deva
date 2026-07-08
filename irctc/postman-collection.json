@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "IRCTC / RailBook — REST edge (design [D])",
+    "description": "Buildable [D] REST contract for the IRCTC design in system-designs-with-deva/irctc. NOT the real (unpublished) IRCTC/CRIS API — the public edge you'd build, faithful to the on-screen decisions (REST edge, gRPC internal, GraphQL skipped; Admission-Token + Idempotency-Key on POST /book; 202-async allocation; pay-then-allocate + compensating refund). Set {{baseUrl}} to a mock server. See api-contracts.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://api.railbook.example/v1" },
+    { "key": "token", "value": "eyJhbGciOiJIUzI1NiJ9.PLACEHOLDER" },
+    { "key": "admissionToken", "value": "eyJhbGciOiJIUzI1NiJ9.ADMISSION.PLACEHOLDER" },
+    { "key": "idempotencyKey", "value": "9f31c0a4-6b2e-4d1a-9c77-2f8e5a1b0c33" },
+    { "key": "bookingId", "value": "BKG-2026-9f31c0a4" }
+  ],
+  "item": [
+    {
+      "name": "IRCTC",
+      "item": [
+        {
+          "name": "GET /availability — check seats (cacheable rumour)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/availability?train=12951&date=2026-08-15&class=3A&quota=GN",
+              "host": ["{{baseUrl}}"],
+              "path": ["availability"],
+              "query": [
+                { "key": "train", "value": "12951" },
+                { "key": "date", "value": "2026-08-15" },
+                { "key": "class", "value": "3A" },
+                { "key": "quota", "value": "GN" }
+              ]
+            },
+            "description": "Cacheable, seconds-stale. A rumour not a promise — you can read AVAILABLE and still land waitlist. Returns { status (AVAILABLE|RAC|WL|REGRET), availableCount/wlNumber, fare, stale, asOf }."
+          }
+        },
+        {
+          "name": "POST /admission/token — pass the tatkal gate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"train\": \"12951\",\n  \"date\": \"2026-08-15\",\n  \"class\": \"3A\",\n  \"quota\": \"TQ\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admission/token", "host": ["{{baseUrl}}"], "path": ["admission", "token"] },
+            "description": "The waiting room. 200 ADMITTED returns { admissionToken, expiresAt, shard }; 202 QUEUED returns { queuePosition, pollUrl }. Token is bound to the shard (train:date) and short-lived. Meters admission to the rate the owners can commit."
+          }
+        },
+        {
+          "name": "POST /book — book (gated, idempotent, 202 async)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Admission-Token", "value": "{{admissionToken}}", "description": "proof you passed the gate — required" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}", "description": "no double-book on a double-tap" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"train\": \"12951\",\n  \"date\": \"2026-08-15\",\n  \"class\": \"3A\",\n  \"quota\": \"TQ\",\n  \"boardingStation\": \"BCT\",\n  \"destinationStation\": \"NDLS\",\n  \"passengers\": [\n    { \"name\": \"ARJUN RAO\", \"age\": 34, \"gender\": \"M\", \"berthPref\": \"LOWER\" },\n    { \"name\": \"MEERA RAO\", \"age\": 31, \"gender\": \"F\", \"berthPref\": \"NO_PREF\" }\n  ],\n  \"paymentRef\": \"IPAY-TXN-77db19c2\",\n  \"contact\": { \"phone\": \"+919999999999\", \"email\": \"arjun@example.com\" }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/book", "host": ["{{baseUrl}}"], "path": ["book"] },
+            "description": "Pay-then-allocate: paymentRef proves money was captured first. 202 Accepted returns { bookingId, state: PENDING_ALLOCATION, statusUrl }. Allocation resolves async behind the single-writer shard owner. 403 without a valid Admission-Token; 409 on Idempotency-Key reuse with a different body."
+          }
+        },
+        {
+          "name": "GET /bookings/{bookingId} — booking status (poll)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings", "{{bookingId}}"] },
+            "description": "Poll the async result — never re-POST /book. Returns { state (PENDING_ALLOCATION|CONFIRMED|RAC|WAITLIST|FAILED|CANCELLED|REFUNDED), pnr (10-digit), per-passenger status CNF|RAC|WL + coach/berth }."
+          }
+        },
+        {
+          "name": "POST /cancel — cancel + compensating refund (idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Idempotency-Key", "value": "c4a0-cancel-{{bookingId}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"passengers\": [\"ARJUN RAO\"],\n  \"reason\": \"USER\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/cancel", "host": ["{{baseUrl}}"], "path": ["cancel"] },
+            "description": "Cancellation is itself a small financial transaction, so it is idempotent. 202 Accepted returns { state: CANCELLATION_PENDING, refund: { refundId, cancellationCharge, estimatedRefund, slaWorkingDays: 5, statutoryBasis: RBI TAT } }. A captured-but-unallocated payment is auto-refunded (saga compensation), legally capped by RBI TAT (T+5 working days)."
+          }
+        }
+      ]
+    }
+  ]
+}

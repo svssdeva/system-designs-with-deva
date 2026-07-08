@@ -59,6 +59,7 @@ flowchart LR
 | 05 | [Data layer](./05-data-layer.md) | DB matrix · isolation · locking · caching |
 | 06 | [Failures & operations](./06-failures-and-operations.md) | Failure matrix · replication · DR · observability |
 | 07 | [Build it yourself](./07-build-it-yourself.md) | Pick-your-stack · build order · cost |
+| — | [API contracts](./api-contracts.md) | REST · gRPC · GraphQL — payloads, headers, idempotency `[D]` (+ [Postman](./postman-collection.json)) |
 
 **Video 1** covers docs 01–03 (+ the LLD and failure drills). **Video 2 — "The Follow-Up Round"**
 covers 04–06 and the cost section of 07. *(Video links in the descriptions.)*
