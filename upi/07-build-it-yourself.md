@@ -62,6 +62,29 @@ present them as opinion, not fact.**
 | **Settlement batch** | NTSL files over SFTP (!) `[V]` | boring batch jobs + object storage | Files survive audits; don't stream what settles 12×/day. |
 | **Fraud scoring** | in-path, ~75 ms budget `[V]` | in-memory feature store + async model | The hard latency budget forces a cache-first shape. |
 
+The database-per-store logic in detail — relational ledger vs KV mapper vs Kafka journal, and
+the SQL-vs-NoSQL reasoning per store — lives in [05 · the data layer](./05-data-layer.md).
+
+### Language — Rust vs Go vs Java vs Node/JS
+
+The switch language is folklore (**UNKNOWN — never say "Java/Spring" as fact**), but the
+*shape* of the decision is defensible. **Languages are budgets, not religions:** the
+correctness core wants boring hireable JVM/Go; only a genuinely latency-bound service earns
+Rust; the edge wants Node. The deciding criterion is in the last column. Picks are **`[I]`**;
+the real-world stacks are **`[V]`.**
+
+| Language | Where it fits `[I]` | Deciding criterion |
+|---|---|---|
+| **Go / Java (JVM)** | the **switch/router, orchestrator, and bank-ledger services** | **P99 ≈ 100 ms `[V]`** with a **10–15 s timeout budget** — GC pauses are tiny against that. Huge Indian hiring pool, mature TLS/HSM/crypto libs. **PhonePe is Java/Dropwizard `[V]`**; NPCI's ecosystem bill names **Java `[V]`.** This is the boring, correct default for the money path. |
+| **Rust** | **only** a genuinely latency-bound hot service (e.g. a fraud/edge path fighting the tail) | Rust buys **P99.9** you **don't need at ~100 ms P99** — so spend it only where the tail actually hurts. **Juspay's Hyperswitch is Rust `[V]`** — proof it works, but that's an elite team's choice, not a default. |
+| **Node / JS** | the **PSP/TPAP app edge + web & app frontends** | Great for the **REST/BFF edge and I/O fan-out** to the switch. **NOT the switch core or the ledger** — you never put a debit leg on the event loop. |
+| **Exotic (Haskell)** | viable for the whole switch **if the team is elite** | **Juspay runs a 1M+ LOC Haskell switch `[V]`** — "exotic languages work in payments." A capability statement, not a recommendation for a normal team. |
+
+**Rejected, and why:** **Rust everywhere = a velocity tax** — you pay the borrow checker on
+CRUD that clears P99 with room to spare. **An eventual-consistency KV for the ledger** loses the
+`balance >= 0` invariant (see [05](./05-data-layer.md)). Keep each choice a **budget line, not a
+religion** — spend the exotic/low-latency option only where the number forces it.
+
 ---
 
 ## A minimal build order (laptop toy)
@@ -152,6 +175,10 @@ models.
   the 1B/day rebuild are UNKNOWN** — don't invent them.
 - **You'd pick** Go/Java switch, Postgres serializable ledger, Redis/Aerospike mapper,
   **Kafka journal (unanimous)** — the "why" column is opinion `[I]`.
+- **Language rule:** **Go/JVM for the switch + ledger** (P99 ≈ 100 ms `[V]` leaves GC pauses
+  irrelevant; PhonePe = Java `[V]`), **Rust only for a genuinely tail-bound service**
+  (Hyperswitch `[V]`), **Node for the app/BFF edge** — never the ledger. Exotic (Haskell,
+  Juspay `[V]`) works only for an elite team. The switch's real language is **UNKNOWN.**
 - Build the toy in four pieces: **ledger (CHECK balance>=0) → KV mapper (TTL) →
   append-only journal (Txn ID) → orchestrator (owns the state machine).**
 - **Settlement is files over SFTP** — boring tech wins.

@@ -69,7 +69,7 @@ flowchart LR
 | 04 | [Services & interactions](./04-services-and-interactions.md) | 12 services + the sync/async matrix |
 | 05 | [Seat-correctness deep-dive](./05-seat-correctness-deep-dive.md) | Serialization menu · ACID · the lost-seat race |
 | 06 | [Failures & drills](./06-failures-and-drills.md) | Failure drills · DR · observability · trade-offs |
-| 07 | [Build it yourself](./07-build-it-yourself.md) | Pick-your-stack + retiring the Fortran core |
+| 07 | [Build it yourself](./07-build-it-yourself.md) | Pick-your-stack · SQL-vs-NoSQL & language matrix · retiring the Fortran core |
 | — | [API contracts](./api-contracts.md) | REST · gRPC · GraphQL — payloads, headers, admission token, idempotency `[D]` (+ [Postman](./postman-collection.json)) |
 
 **Video 1 — "Crack the Map"** covers docs 01–03 (+ the seat-correctness LLD and failure

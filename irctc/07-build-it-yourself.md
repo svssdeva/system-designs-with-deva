@@ -60,6 +60,50 @@ religions.**
 
 ---
 
+## Tech stack: database & language decisions
+
+The two follow-ups that come next, made concrete: **which database per store**, and **which
+language per service** — with the deciding constraint written down each time. The **pick** and
+**why** columns are **`[I]` engineering judgment**; the real internal engines are **`[V]`.**
+
+### Database — SQL vs NoSQL, per store
+
+**The core move: there is no one database.** Each store has a different job, and the right
+engine for the berth ledger is the wrong engine for the availability rumour.
+
+| Store | Job | You'd pick `[I]` | Deciding reason + constraint |
+|---|---|---|---|
+| **Inventory owner / berth ledger / PNR ledger** (system of record) | allocate berths, decrement quota, mint PNR, link payment | **Relational (Postgres)** | The booking commit is a **multi-row ACID transaction** (both passengers' berths + quota counter + PNR + payment linkage, all-or-nothing) with the **`unique berth per train-date`** constraint **in the schema**, FKs, and an audit trail. **NoSQL loses the multi-row transaction** — you cannot express "one berth, one passenger, atomically, under concurrent claims" in a schemaless model as cleanly as a relational constraint + serialized writer. |
+| **Availability cache** | answer "seats free?" off the hot path | **KV / in-memory (Redis)** | Read-heavy at the official **12.5:1** enquiry:booking ratio; a **seconds-stale rumour** is fine (you can pay and still land WL). Key = `train × date × class × quota`. **Never the source of truth** — only the ledger commit is authoritative. |
+| **Quota counters / waitlist queues** | the 19 fenced counters + numbered WL/RAC queues | **KV / in-memory, owner is the sole writer** | These are **policy layers over the one physical berth array** — counters and numbered queues, not their own inventory. Keep them in fast storage but let the **single-writer inventory owner** be the only writer, so the cascade (WL-1 → RAC → CNF) reuses the exact serialization the ledger already has. |
+| **Hot inventory grid** | the whole train-date working set in RAM at extreme concurrency | **In-memory data grid** — the **real IRCTC runs Pivotal GemFire `[V]`** | GemFire took NGeT from **~40k → 120k+ concurrent (300% lift) `[V]`**. But a grid **only pays at 100k+ concurrent** — a build-your-own **starts with Postgres + Redis** and adds a grid **only if scale demands it.** Don't reach for it on day one. |
+| **Search / analytics** (off the hot path, via CDC) | route/PNR search, dashboards, recon, investigations | **Document / search store (Elasticsearch-class)** | Query-heavy, fed by **CDC off the ledger** — **never the source of truth**, never on the booking path. |
+
+**The rule:** **relational** for the money/inventory system-of-record (multi-row ACID +
+schema constraint); **KV/cache** for the availability rumour and the policy counters; an
+**in-memory grid only at extreme concurrency** (real IRCTC does this — you probably don't need
+to); **document/search only off the hot path, fed by CDC.** Match the store to the invariant you
+must enforce — one berth, one passenger — not to fashion.
+
+### Language — Rust vs Go vs Java vs Node/JS
+
+**Languages are budgets, not religions.** One hot service earns Rust; the correctness core and
+back office want boring, hireable JVM/Go; the public edge wants Node. The deciding criterion is
+in the last column.
+
+| Language | Where it fits `[I]` | Deciding criterion |
+|---|---|---|
+| **Rust** | the **admission gate + cache path** — the p99 that lives or dies in the tatkal storm | The **one** place a **GC pause** is a tail-latency risk under a thundering herd — the **Discord Go → Rust** argument for a single hot service. **Spend Rust there, not everywhere.** |
+| **Go / Java (JVM)** | the **inventory owners, chart batch, refunds, reconciliation** | **Hireable in India, debuggable at 3 a.m., fast enough behind a queue that already smoothed the spike.** The single-writer owner isn't latency-bound at the language level — it's serialized by design, so GC pauses hide behind the queue. The real front tier was **Java-era `[R]`.** |
+| **Node / JS** | the **public edge / BFF + the web & app frontends** | Great for the **REST edge and I/O fan-out** (enquiry, PNR status, session). IRCTC's real edge fingerprints as **Node/Express `[V fingerprint]`.** **NOT for the correctness core** — you never put berth allocation on the event loop. |
+
+**Rejected, and why:** **Rust everywhere = a velocity tax** for a 50-engineer org (borrow
+checker on CRUD you'll rewrite twice) — spend it only where p99 pays. **A GC language on the p99
+admission gate = a tail-latency risk** exactly in the one minute that decides everything —
+that's the seam Rust is worth buying. Keep the choice a **budget line, not a religion.**
+
+---
+
 ## The real-vs-build matrix, in one line
 
 You'd build it **this weekend:** Postgres with the **berth constraint in the schema**,
@@ -166,6 +210,11 @@ time, settled and verified, never all at once.**
   core's **locking discipline is UNKNOWN.** **Never COBOL.**
 - **You'd build:** Postgres (schema constraint) + single-writer owners + Redis rumour cache
   + rented edge queue + REST/gRPC + OTel; **Rust only for the gate.**
+- **Tech-stack rule:** **relational** for the money/inventory system-of-record (multi-row
+  ACID + schema constraint), **KV/cache** for the rumour + policy counters, an **in-memory
+  grid only at 100k+ concurrent** (real IRCTC = GemFire `[V]`), **document/search only off the
+  hot path via CDC.** Language: **Rust for the gate, Go/JVM for owners + batch, Node for the
+  edge `[V fingerprint]`** — never on the correctness core.
 - The philosophy: **price failure, don't prevent it** — except correctness, which lives in
   a boring single-file queue.
 - **Modernise = strangler-fig:** dual-write + shadow-read + **per-shard cutover**, old core
