@@ -26,8 +26,8 @@ Each system gets one folder and seven numbered docs, written in the order a real
 
 | System | What it is | Status |
 | :-- | :-- | :-- |
-| **[UPI](./upi/)** | India's instant payment rails — ~22B txns/month across 700+ banks | ✅ **Ready** — [7 docs](./upi/) + [build guide](./upi/07-build-it-yourself.md) |
-| **[IRCTC](./irctc/)** | The Tatkal booking storm — tens of thousands of tickets/min on fixed inventory | ✅ **Ready** — [7 docs](./irctc/) + [build guide](./irctc/07-build-it-yourself.md) + [API contracts](./irctc/api-contracts.md) |
+| **[UPI](./upi/)** | India's instant payment rails — ~22B txns/month across 700+ banks | ✅ **Ready** — [7 docs](./upi/) + [build guide](./upi/07-build-it-yourself.md) + [API contracts](./upi/api-contracts.md) + [Postman](./upi/postman-collection.json) + [HTML site](./upi/index.html) |
+| **[IRCTC](./irctc/)** | The Tatkal booking storm — tens of thousands of tickets/min on fixed inventory | ✅ **Ready** — [7 docs](./irctc/) + [build guide](./irctc/07-build-it-yourself.md) + [API contracts](./irctc/api-contracts.md) + [Postman](./irctc/postman-collection.json) + [HTML site](./irctc/index.html) |
 | **[Hotstar](./hotstar/)** | Tens of millions of concurrent live viewers on one cricket ball — 72.5M ICC world record | ✅ **Ready** — [8 docs](./hotstar/) + [build guide](./hotstar/07-build-it-yourself.md) + [API contracts](./hotstar/api-contracts.md) + [HTML site](./hotstar/index.html) |
 
 ## Read it two ways
