@@ -1,0 +1,123 @@
+{
+  "info": {
+    "name": "Hotstar Live — REST read edge (design [D])",
+    "description": "Buildable [D] REST contract for the Hotstar live-streaming design in system-designs-with-deva/hotstar. NOT the real (unpublished) Hotstar/JioHotstar playback API — the public read edge you'd build, faithful to the on-screen decisions: cacheable-vs-must-compute is the axis (immutable year-cached segments = the 70-Tbps road; scorecard/concurrency s-maxage + stale-while-revalidate; only POST /playback/session and GET /entitlement must-compute), signed short-TTL manifest URLs, DRM = multi-DRM trio (vendor UNKNOWN), emoji fire-and-forget 202 (no idempotency, relaxed correctness). The MQTT realtime spine (50M sockets, QoS 0) is NOT in this collection — Postman collections don't carry MQTT; see api-contracts.md §3. Set {{apiUrl}} to a mock server. See api-contracts.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "apiUrl", "value": "https://api.streamlive.example/v1" },
+    { "key": "cdnUrl", "value": "https://cdn.streamlive.example" },
+    { "key": "token", "value": "eyJhbGciOiJIUzI1NiJ9.PLACEHOLDER" },
+    { "key": "matchId", "value": "match-t20wc26-final" },
+    { "key": "cohort", "value": "coh-07" },
+    { "key": "exp", "value": "1772982043" },
+    { "key": "sig", "value": "b91fPLACEHOLDERe2" }
+  ],
+  "item": [
+    {
+      "name": "Hotstar",
+      "item": [
+        {
+          "name": "POST /playback/session — start playback (must-compute, per-user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Request-Id", "value": "d3f1a0c2-1e44-4a9b-9c00-7c1e9a44b210" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{matchId}}\",\n  \"deviceType\": \"android-mobile\",\n  \"drmType\": \"widevine\",\n  \"network\": \"2g\"\n}"
+            },
+            "url": { "raw": "{{apiUrl}}/playback/session", "host": ["{{apiUrl}}"], "path": ["playback", "session"] },
+            "description": "The ONLY origin round-trip in the happy path. Checks auth + entitlement + concurrency, then mints a signed short-TTL manifest URL + DRM handshake. Returns 200 { sessionId, manifestUrl (signed, ~45s TTL), cohort, drm (vendor UNKNOWN), concurrency, asOf }. Cache-Control: private, no-store. 401/403 not entitled · 409 device-concurrency cap · 451 geo-blocked · 503 panic-mode (retry w/ jitter)."
+          }
+        },
+        {
+          "name": "GET master.m3u8 — the manifest (signed, short-cached, SSAI-stitched)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{cdnUrl}}/live/{{matchId}}/{{cohort}}/master.m3u8?exp={{exp}}&sig={{sig}}",
+              "host": ["{{cdnUrl}}"],
+              "path": ["live", "{{matchId}}", "{{cohort}}", "master.m3u8"],
+              "query": [
+                { "key": "exp", "value": "{{exp}}", "description": "short TTL (~30-60s); expired -> 403 at edge, no origin call" },
+                { "key": "sig", "value": "{{sig}}", "description": "HMAC(secret, path + exp [+ client class])" }
+              ]
+            },
+            "description": "Fetched with the signed URL from /playback/session. Returns the HLS master playlist (rendition ladder ~200kbps -> ~5Mbps, exact rungs UNKNOWN) with SSAI already stitched server-side at SCTE-35 markers for this cohort. Media playlists carry #EXT-X-DISCONTINUITY at ad seams. Still a file -> Cache-Control: public, max-age=2. No Authorization: the signed manifest is the capability, DRM is the content lock."
+          }
+        },
+        {
+          "name": "GET seg*.ts — the segment (immutable, edge-served, 70-Tbps road)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{cdnUrl}}/live/{{matchId}}/720p/seg09231.ts",
+              "host": ["{{cdnUrl}}"],
+              "path": ["live", "{{matchId}}", "720p", "seg09231.ts"]
+            },
+            "description": "The bytes. Immutable content cached for a year -> Cache-Control: public, max-age=31536000, immutable; X-Cache: HIT. No auth on the segment (signed manifest gated entry, DRM locks content). >90% served as a CDN cache HIT that never touches origin. This single immutable header is why 72M players requesting the same ball hit the edge, not your origin — the 60-80 Tbps number survivable."
+          }
+        },
+        {
+          "name": "GET /scorecard/{matchId} — the score (cacheable, seconds-stale OK)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "If-None-Match", "value": "\"sc-8842\"", "description": "cheap 304 revalidation for the chatty widget" }
+            ],
+            "url": { "raw": "{{apiUrl}}/scorecard/{{matchId}}", "host": ["{{apiUrl}}"], "path": ["scorecard", "{{matchId}}"] },
+            "description": "A chatty widget read by millions. Freshness deliberately relaxed. Returns 200 { score, batting, lastEvent, asOf, stale: true } or 304 on matching If-None-Match. Cache-Control: public, s-maxage=3, stale-while-revalidate=10; ETag echoed. stale:true + asOf say out loud the number may have moved."
+          }
+        },
+        {
+          "name": "POST /reactions/{matchId} — emoji (batched, fire-and-forget)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"batch\": [\n    { \"emoji\": \"\\ud83d\\udd25\", \"ts\": 1789012931 },\n    { \"emoji\": \"\\ud83d\\udd25\", \"ts\": 1789012931 },\n    { \"emoji\": \"\\ud83d\\udc4f\", \"ts\": 1789012932 }\n  ]\n}"
+            },
+            "url": { "raw": "{{apiUrl}}/reactions/{{matchId}}", "host": ["{{apiUrl}}"], "path": ["reactions", "{{matchId}}"] },
+            "description": "The social layer. Correctness DELIBERATELY relaxed: NO idempotency key, NO durable ack. Client batches reactions and fires; edge returns 202 { accepted, note } and never blocks playback. Cache-Control: no-store. Ingest Go -> Kafka (500ms) -> Spark (2s) -> MQTT fanout (QoS 0). Delivery back to clients is MQTT (api-contracts.md §3), not HTTP."
+          }
+        },
+        {
+          "name": "GET /entitlement — subscription gate (P0 must-compute read)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/entitlement?contentId={{matchId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["entitlement"],
+              "query": [ { "key": "contentId", "value": "{{matchId}}" } ]
+            },
+            "description": "Returns { entitled, plan, deviceLimit, reason }. Cache-Control: private, max-age=30. A P0 read — panic-mode keeps auth/subscription alive while recs/watchlist die first."
+          }
+        },
+        {
+          "name": "GET /concurrency/{matchId} — live concurrency (cacheable, stale OK)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "If-None-Match", "value": "\"cc-4471\"" }
+            ],
+            "url": { "raw": "{{apiUrl}}/concurrency/{{matchId}}", "host": ["{{apiUrl}}"], "path": ["concurrency", "{{matchId}}"] },
+            "description": "Returns { concurrent: 72500000, metric: CONCURRENCY, note: NOT cumulative views, asOf }. Cache-Control: public, s-maxage=5, stale-while-revalidate=15; X-Metric-Kind: CONCURRENCY. The metric/X-Metric-Kind fields put the metric-trap guardrail on the wire — concurrency, never cumulative views."
+          }
+        }
+      ]
+    }
+  ]
+}

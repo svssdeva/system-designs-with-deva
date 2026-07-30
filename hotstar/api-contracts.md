@@ -18,6 +18,9 @@ defend on a whiteboard: concrete payloads, the **signed short-TTL manifest URL**
 
 Companion doc: [`02-requirements-and-api.md`](./02-requirements-and-api.md) — the scope, the
 ranked NFRs, and the HLS-vs-WebRTC decision this contract is built on.
+Companion file: [`postman-collection.json`](./postman-collection.json) — import it, point
+`{{apiUrl}}` / `{{cdnUrl}}` at a mock server, and try the REST read edge (§2). The MQTT
+realtime spine (§3) is not in the collection — Postman collections don't carry MQTT.
 
 ---
 

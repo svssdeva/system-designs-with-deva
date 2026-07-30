@@ -70,7 +70,7 @@ flowchart LR
 | 05 | [Scale & resilience deep-dive](./05-scale-and-resilience-deep-dive.md) | The ladder · panic mode · 50M sockets · SSAI |
 | 06 | [Failures & drills](./06-failures-and-drills.md) | Failure drills · chaos (HULK) · observability · trade-offs |
 | 07 | [Build it yourself](./07-build-it-yourself.md) | Pick-your-stack · DB-per-store & language matrix · the philosophy |
-| — | [API contracts](./api-contracts.md) | Manifest · segment · scorecard · emoji — signed URLs, caching, idempotency `[D]` |
+| — | [API contracts](./api-contracts.md) | Manifest · segment · scorecard · emoji — signed URLs, caching, idempotency `[D]` (+ [Postman](./postman-collection.json)) |
 
 **Video 1 — "Build Your Own Hotstar"** covers docs 01–03 (the machine, the spec, the board).
 **Video 2 — "The Follow-Up Round"** covers 04–07 (services & interactions, the scale/resilience
