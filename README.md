@@ -6,9 +6,9 @@
 
 Companion to the **[System Design — What If](https://youtube.com/@beyondcodekarma)** series — reverse-engineer a real system, then rebuild a working toy of it and defend every choice.
 
-`UPI` · `IRCTC` · `Hotstar` — verified facts, labelled sources, real diagrams.
+`UPI` · `IRCTC` · `Hotstar` · `Video player` — verified facts, labelled sources, real diagrams.
 
-![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-f54e00) ![Docs](https://img.shields.io/badge/docs-HTML%20site-1b1915) ![Systems](https://img.shields.io/badge/systems-3%20ready-9fbbe0)
+![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-f54e00) ![Docs](https://img.shields.io/badge/docs-HTML%20site-1b1915) ![Systems](https://img.shields.io/badge/systems-4%20ready-9fbbe0)
 
 </div>
 
@@ -29,11 +29,12 @@ Each system gets one folder and seven numbered docs, written in the order a real
 | **[UPI](./upi/)** | India's instant payment rails — ~22B txns/month across 700+ banks | ✅ **Ready** — [7 docs](./upi/) + [build guide](./upi/07-build-it-yourself.md) + [API contracts](./upi/api-contracts.md) + [Postman](./upi/postman-collection.json) + [HTML site](./upi/index.html) |
 | **[IRCTC](./irctc/)** | The Tatkal booking storm — tens of thousands of tickets/min on fixed inventory | ✅ **Ready** — [7 docs](./irctc/) + [build guide](./irctc/07-build-it-yourself.md) + [API contracts](./irctc/api-contracts.md) + [Postman](./irctc/postman-collection.json) + [HTML site](./irctc/index.html) |
 | **[Hotstar](./hotstar/)** | Tens of millions of concurrent live viewers on one cricket ball — 72.5M ICC world record | ✅ **Ready** — [8 docs](./hotstar/) + [build guide](./hotstar/07-build-it-yourself.md) + [API contracts](./hotstar/api-contracts.md) + [Postman](./hotstar/postman-collection.json) + [HTML site](./hotstar/index.html) |
+| **[Video player](./video-player/)** | The **client** side — 89 requests for one video, and the two EWMAs that decide which one comes next | ✅ **Ready** — [7 docs](./video-player/) + [build guide](./video-player/07-build-it-yourself.md) + [HTML site](./video-player/index.html) |
 
 ## Read it two ways
 
 - **On GitHub** — open any folder; the Markdown renders with diagrams inline. Start at **[`upi/`](./upi/)**.
-- **As an HTML site** — [`upi/index.html`](./upi/index.html), [`irctc/index.html`](./irctc/index.html) and [`hotstar/index.html`](./hotstar/index.html) are self-contained, offline-ready pages rendering each breakdown on the "digital blackboard" from the videos, diagrams and all. Open one locally, or serve it with GitHub Pages (each system folder carries its own `index.html`).
+- **As an HTML site** — [`upi/index.html`](./upi/index.html), [`irctc/index.html`](./irctc/index.html), [`hotstar/index.html`](./hotstar/index.html) and [`video-player/index.html`](./video-player/index.html) are self-contained, offline-ready pages rendering each breakdown on the "digital blackboard" from the videos, diagrams and all. Open one locally, or serve it with GitHub Pages (each system folder carries its own `index.html`).
 
 ## What's in a system folder
 
